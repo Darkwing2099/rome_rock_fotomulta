@@ -1,5 +1,8 @@
 package com.rodriguez.armin.fotomulta.views;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
@@ -17,6 +20,7 @@ import com.rodriguez.armin.fotomulta.R;
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private AlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,19 +31,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-
     }
 
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -65,11 +58,32 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
             @Override
             public void onMapLongClick(LatLng latLng) {
-                Toast.makeText(MapActivity.this, "long click", Toast.LENGTH_SHORT).show();
+
 
                 mMap.addMarker(new MarkerOptions().position(latLng).title("Marker in Sydney"));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
             }
         });
+    }
+
+    private void showDialog()
+    {
+        AlertDialog dialog = new AlertDialog.Builder(this).create();
+        dialog.setMessage(getResources().getString(R.string.add_marker_question));
+        dialog.setCancelable(false);
+        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.no), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        dialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.yes), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+
     }
 }

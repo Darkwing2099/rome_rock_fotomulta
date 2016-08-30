@@ -1,2 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <string name="app_name">FotoMulta</string>
+    <string name="title_activity_map">Mapa</string>
+
+    <!-- camera types-->
+    <string-array name="camera_types">
+        <item>Semáforo</item>
+        <item>Visible</item>
+        <item>Oculta</item>
+    </string-array>
+    <string name="add_marker_question">¿Quieres agregar un indacador de fotomulta?</string>
+    <string name="yes">Sí</string>
+    <string name="no">no</string>
+</resources>

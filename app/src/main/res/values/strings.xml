@@ -1,4 +1,16 @@
 <resources>
     <string name="app_name">FotoMulta</string>
     <string name="title_activity_map">Map</string>
+
+    <!-- camera types-->
+    <string-array name="camera_types">
+        <item>Traffic light</item>
+        <item>Visible</item>
+        <item>Hidden</item>
+    </string-array>
+    <string name="add_marker_question">Do you want add a fotomulta marker?</string>
+    <string name="yes">Yes</string>
+    <string name="no">no</string>
+
+
 </resources>
