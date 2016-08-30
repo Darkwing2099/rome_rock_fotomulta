@@ -1,5 +1,6 @@
 package com.rodriguez.armin.fotomulta.beans;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.rodriguez.armin.fotomulta.enums.CameraType;
 
 /**
@@ -11,8 +12,7 @@ public class Marker {
 
     private int id;
     private String name;
-    private long longitude;
-    private long latitude;
+    private LatLng latLng;
     private int speedLimit;
     private boolean isOwn;
     private CameraType cameraType;
@@ -33,20 +33,12 @@ public class Marker {
         this.name = name;
     }
 
-    public long getLongitude() {
-        return longitude;
+    public LatLng getLatLng() {
+        return latLng;
     }
 
-    public void setLongitude(long longitude) {
-        this.longitude = longitude;
-    }
-
-    public long getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(long latitude) {
-        this.latitude = latitude;
+    public void setLatLng(LatLng latLng) {
+        this.latLng = latLng;
     }
 
     public int getSpeedLimit() {

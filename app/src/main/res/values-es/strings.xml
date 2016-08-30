@@ -5,10 +5,12 @@
 
     <!-- camera types-->
     <string-array name="camera_types">
+        <item>Selecciona un tipo</item>
         <item>Semáforo</item>
         <item>Visible</item>
         <item>Oculta</item>
     </string-array>
+
     <string name="add_marker_question">¿Quieres agregar un indacador de fotomulta?</string>
     <string name="yes">Sí</string>
     <string name="no">no</string>
@@ -17,4 +19,8 @@
     <string name="accept">Aceptar</string>
     <string name="cancel">Cancelar</string>
     <string name="mph">km/h</string>
+    <string name="fill_fields">Debes llenar todos los campos</string>
+    <string name="camera_type">Tipo de cámara:</string>
+    <string name="default_camera_selector_prompt">Selecciona una ...</string>
+
 </resources>

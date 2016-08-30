@@ -23,6 +23,14 @@ public class DBManager extends SQLiteOpenHelper{
     }
 
     @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        if(!db.isReadOnly()){
+            db.execSQL("PRAGMA automatic_index=off;");
+        }
+    }
+
+    @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
     }

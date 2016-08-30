@@ -4,6 +4,7 @@
 
     <!-- camera types-->
     <string-array name="camera_types">
+        <item>Select one type</item>
         <item>Traffic light</item>
         <item>Visible</item>
         <item>Hidden</item>
@@ -17,6 +18,9 @@
     <string name="accept">Accept</string>
     <string name="cancel">Cancel</string>
     <string name="mph">mph</string>
+    <string name="fill_fields">You should fill all fieds</string>
+    <string name="camera_type">Camera type:</string>
+    <string name="default_camera_selector_prompt">Select one ...</string>
 
 
 </resources>
