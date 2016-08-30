@@ -8,9 +8,15 @@
         <item>Visible</item>
         <item>Hidden</item>
     </string-array>
+
     <string name="add_marker_question">Do you want add a fotomulta marker?</string>
     <string name="yes">Yes</string>
     <string name="no">no</string>
+    <string name="speed_limit">Speed limit:</string>
+    <string name="name">Name:</string>
+    <string name="accept">Accept</string>
+    <string name="cancel">Cancel</string>
+    <string name="mph">mph</string>
 
 
 </resources>

@@ -12,4 +12,9 @@
     <string name="add_marker_question">¿Quieres agregar un indacador de fotomulta?</string>
     <string name="yes">Sí</string>
     <string name="no">no</string>
+    <string name="speed_limit">Límite de velocidad: </string>
+    <string name="name">Nombre: </string>
+    <string name="accept">Aceptar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="mph">km/h</string>
 </resources>
