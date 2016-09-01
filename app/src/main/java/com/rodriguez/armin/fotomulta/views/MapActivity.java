@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -29,36 +30,48 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu;
 import com.oguzdev.circularfloatingactionmenu.library.SubActionButton;
 import com.rodriguez.armin.fotomulta.R;
 import com.rodriguez.armin.fotomulta.beans.Marker;
+import com.rodriguez.armin.fotomulta.controllers.GeofenceController;
 import com.rodriguez.armin.fotomulta.controllers.MarkerController;
 import com.rodriguez.armin.fotomulta.enums.CameraType;
-import com.rodriguez.armin.fotomulta.models.MarkerModel;
 import com.software.shell.fab.ActionButton;
 
-public class MapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MapActivity extends FragmentActivity implements OnMapReadyCallback, ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
 
+    private Context context;
+
+    //to manage map
     private GoogleMap mMap;
+    private LatLng selectedLocation;
+    private Location currentLocation;
+
+    //to manage marker creation
     private LinearLayout markerInfoForm;
     private EditText markerName, markerSpeedLimit;
     private Button acceptBtn, cancelBtn;
-    private LatLng selectedLocation;
-    private GoogleApiClient mGoogleApiClient;
-    private Location mLastLocation;
     private Spinner cameraSelector;
     private CameraType cameraType;
-    private Context context;
-    private MarkerController markerController;
     private ActionButton menuButton;
+    private int screenWidth, screenHeight;
+    private MarkerController markerController;
+
+    //Geofence
+    private GoogleApiClient mGoogleApiClient;
+    private GeofenceController geofenceController;
+
+    private float currentSpeed = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,24 +91,26 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     .addOnConnectionFailedListener(this)
                     .addApi(LocationServices.API)
                     .build();
+
+            geofenceController = new GeofenceController(context, mGoogleApiClient);
         }
+
+        //get screen size
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        screenWidth = size.x;
+        screenHeight = size.y;
 
         markerInfoForm = (LinearLayout) findViewById(R.id.ll_data_container);
         markerName = (EditText) findViewById(R.id.et_name);
         markerSpeedLimit = (EditText) findViewById(R.id.et_speed_limit);
         acceptBtn = (Button) findViewById(R.id.btn_accept);
         cancelBtn = (Button) findViewById(R.id.btn_cancel);
+
+        //spinner configuration
         cameraSelector = (Spinner) findViewById(R.id.sp_camera_type_selector);
         cameraSelector.getBackground().setColorFilter(getResources().getColor(R.color.white), PorterDuff.Mode.SRC_ATOP);
-        menuButton = (ActionButton) findViewById(R.id.action_button);
-
-        menuButton.setImageResource(R.drawable.menu_dots_icon);
-        menuButton.setButtonColor(getResources().getColor(R.color.red));
-        menuButton.setShadowResponsiveEffectEnabled(true);
-
-        SubActionButton.Builder itemBuilder = new SubActionButton.Builder(this);
-
-        initFloatButton(itemBuilder);
 
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.camera_types, android.R.layout.simple_spinner_item);
@@ -103,6 +118,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         cameraSelector.setAdapter(adapter);
         cameraSelector.setSelection(0);
+
+        //Float Action Button configuration
+        menuButton = (ActionButton) findViewById(R.id.action_button);
+        menuButton.setImageResource(R.drawable.map_marker);
+        menuButton.setButtonColor(getResources().getColor(R.color.dodger_blue));
+        menuButton.setShadowResponsiveEffectEnabled(true);
+        SubActionButton.Builder itemBuilder = new SubActionButton.Builder(this);
+        initFloatButton(itemBuilder);
 
         acceptBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -114,19 +137,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 if (name.isEmpty() || speedLimit.isEmpty() || cameraType == null)
                     Toast.makeText(context, R.string.fill_fields, Toast.LENGTH_SHORT).show();
                 else {
-                    Marker marker = new Marker();
-                    marker.setName(name);
-                    marker.setSpeedLimit(Integer.parseInt(speedLimit));
-                    marker.setLatLng(selectedLocation);
-                    marker.setOwn(true);
-                    marker.setCameraType(cameraType);
+                    Marker marker = markerController.createMarker(mMap,name,speedLimit,selectedLocation,cameraType);
+                    geofenceController.addGeofence(marker);
 
-                    String speedLimitPhrase = getResources().getString(R.string.speed_limit) + speedLimit + getResources().getString(R.string.mph);
-
-                    mMap.addMarker(new MarkerOptions().position(selectedLocation).title(name).snippet(speedLimitPhrase));
                     markerInfoForm.setVisibility(View.GONE);
-
-                    MarkerModel.saveMarker(context, marker);
                     resetForm();
                 }
             }
@@ -167,7 +181,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         });
     }
 
-
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -178,14 +191,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMapToolbarEnabled(false);
 
-        Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        int width = size.x;
-        int height = size.y;
-
-        markerController.showAllMarkers(mMap, width, height);
-
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
             @Override
             public void onMapLongClick(LatLng latLng) {
@@ -194,7 +199,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 showDialog();
             }
         });
-
     }
 
     private void showDialog() {
@@ -219,6 +223,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         dialog.show();
     }
 
+    /**
+     * Set empty form fields
+     */
     private void resetForm() {
         markerName.setText("");
         markerSpeedLimit.setText("");
@@ -234,13 +241,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             return;
         }
 
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+        currentLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
-        if (mLastLocation != null) {
 
-            LatLng latLng= new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude());
+        if (currentLocation != null) {
 
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
+            LatLng latLng= new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
         }
 
     }
@@ -285,30 +292,105 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
      */
     private void initFloatButton(SubActionButton.Builder itemBuilder)
     {
+        //show all markers button
+        ImageView showAllIcon = new ImageView(this); // Create an icon
+        showAllIcon.setImageResource(R.drawable.two_markers);
+
+        SubActionButton showAllMarkersButton = itemBuilder.setContentView(showAllIcon).build();
+        showAllMarkersButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.circle_blue_light));
+
+        //Hide all markers button
+        ImageView hideAllIcon = new ImageView(this); // Create an icon
+        hideAllIcon.setImageResource(R.drawable.close_marker);
+
+        SubActionButton hideAllMarkersButton = itemBuilder.setContentView(hideAllIcon).build();
+        hideAllMarkersButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.circle_blue_light));
+
+        //traffic light camera type button
         ImageView trafficLightIcon = new ImageView(this); // Create an icon
-        trafficLightIcon.setImageResource(R.drawable.traffic_light_icon);
+        trafficLightIcon.setImageResource(R.drawable.traffic_light);
 
-        SubActionButton trafficLightButton = itemBuilder.setContentView(trafficLightIcon).build();
-        trafficLightButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.round));
+        SubActionButton showTrafficLightTypeButton = itemBuilder.setContentView(trafficLightIcon).build();
+        showTrafficLightTypeButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.circle_green));
 
+        //visible camera type button
         ImageView visibleIcon = new ImageView(this); // Create an icon
-        visibleIcon.setImageResource(R.drawable.open_eye_icon);
+        visibleIcon.setImageResource(R.drawable.open_eye);
 
-        SubActionButton visibleButton = itemBuilder.setContentView(visibleIcon).build();
-        visibleButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.round));
+        SubActionButton showVisibleTypeButton = itemBuilder.setContentView(visibleIcon).build();
+        showVisibleTypeButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.circle_yellow));
 
+        //hidden camera type button
         ImageView hiddenIcon = new ImageView(this); // Create an icon
-        hiddenIcon.setImageResource(R.drawable.close_eye_icon);
+        hiddenIcon.setImageResource(R.drawable.close_eye);
 
-        SubActionButton hiddenButton = itemBuilder.setContentView(hiddenIcon).build();
-        hiddenButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.round));
+        SubActionButton showHiddenTypeButton = itemBuilder.setContentView(hiddenIcon).build();
+        showHiddenTypeButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.circle_red));
+
 
         final FloatingActionMenu actionMenu = new FloatingActionMenu.Builder(this)
-                .addSubActionView(trafficLightButton)
-                .addSubActionView(visibleButton)
-                .addSubActionView(hiddenButton)
+                .addSubActionView(showAllMarkersButton)
+                .addSubActionView(hideAllMarkersButton)
+                .addSubActionView(showTrafficLightTypeButton)
+                .addSubActionView(showVisibleTypeButton)
+                .addSubActionView(showHiddenTypeButton)
                 .attachTo(menuButton)
                 .build();
+
+        showAllMarkersButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                actionMenu.close(true);
+                mMap.clear();
+                markerController.showAllMarkers(mMap, screenWidth, screenHeight);
+            }
+        });
+
+        hideAllMarkersButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                actionMenu.close(true);
+                mMap.clear();
+
+                LatLng latLng= new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
+            }
+        });
+
+        showTrafficLightTypeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                actionMenu.close(true);
+                mMap.clear();
+                markerController.showFilteringMarkers(mMap, CameraType.TRAFFIC_LIGHT, screenWidth, screenHeight);
+            }
+        });
+
+        showVisibleTypeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                actionMenu.close(true);
+                mMap.clear();
+                markerController.showFilteringMarkers(mMap, CameraType.VISIBLE, screenWidth, screenHeight);
+            }
+        });
+
+        showHiddenTypeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                actionMenu.close(true);
+                mMap.clear();
+                markerController.showFilteringMarkers(mMap, CameraType.HIDDEN, screenWidth, screenHeight);
+            }
+        });
     }
 
+    @Override
+    public void onLocationChanged(Location location) {
+        currentSpeed = location.getSpeed();
+
+        Toast.makeText(context,"velocidad actual: " + currentSpeed, Toast.LENGTH_SHORT).show();
+        Log.d("armin", "location change");
+
+    }
 }

@@ -112,4 +112,51 @@ public class MarkerModel {
         return markerList;
     }
 
+    /**
+     * Get all markers by camera type
+     * @param context
+     * @return Marker Array list if exists, null otherwise
+     */
+    public static ArrayList<Marker> getFilteringMarkers(Context context, CameraType cameraType)
+    {
+        ArrayList<Marker> markerList = null;
+
+        DBManager dbManager = new DBManager(context);
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+
+        String where = COLUMN_CAMERA_TYPE + " = " + cameraType.getCameraId();
+
+        Cursor cursor = db.query(TABLE_NAME, null, where, null, null, null, null);
+
+        if(cursor.moveToFirst())
+        {
+            markerList = new ArrayList<>();
+
+            do {
+                Marker marker = new Marker();
+
+                marker.setName(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME)));
+
+                double latitude = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_LATITUDE));
+                double longitude = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_LONGITUDE));
+                marker.setLatLng(new LatLng(latitude,longitude));
+
+                marker.setSpeedLimit(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SPEED_LIMIT)));
+
+                int isOwn = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_IS_OWN));
+                marker.setOwn(isOwn== 1 ? true : false);
+
+                marker.setCameraType(cameraType);
+
+                markerList.add(marker);
+
+            }while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+
+        return markerList;
+    }
+
 }
