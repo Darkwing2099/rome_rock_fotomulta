@@ -1,7 +1,10 @@
 package com.rodriguez.armin.fotomulta.controllers;
 
 import android.content.Context;
+import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.Geofence;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -51,10 +54,50 @@ public class MarkerController {
         marker.setCameraType(cameraType);
 
         //save marker in database
-        MarkerModel.saveMarker(context, marker);
+        long newMarkerId = MarkerModel.saveMarker(context, marker);
+
+        marker.setId(newMarkerId);
 
         return marker;
     }
+
+    /**
+     * Remove all geofences and then adds all to keep alive all markers geofences
+     * @param googleApiClien
+     */
+    public void refreshGeofences(GoogleApiClient googleApiClien)
+    {
+        ArrayList<Marker> markers = MarkerModel.getAllMarkers(context);
+
+        if(markers != null && markers.size() > 0)
+        {
+            GeofenceController geofenceController = new GeofenceController(context, googleApiClien);
+
+            geofenceController.removeGeofences();
+            geofenceController.addGeofences(markers);
+        }
+
+    }
+
+    /**
+     * Show only one marker
+     * @param mMap
+     * @param markerId
+     */
+    public void showMarkerById(GoogleMap mMap, long markerId)
+    {
+        Marker marker = MarkerModel.getMarkerById(context, markerId);
+
+        String speedLimitPhrase = context.getResources().getString(R.string.speed_limit) + marker.getSpeedLimit() + context.getResources().getString(R.string.mph);
+
+        mMap.addMarker(new MarkerOptions()
+                .position(marker.getLatLng())
+                .title(marker.getName())
+                .snippet(speedLimitPhrase)
+                .icon(BitmapDescriptorFactory.defaultMarker(getMarkerColor(marker.getCameraType()))));
+
+    }
+
 
     /**
      * Show all markers type
@@ -66,7 +109,7 @@ public class MarkerController {
     {
         ArrayList<Marker> markerList = MarkerModel.getAllMarkers(context);
 
-        if(!markerList.isEmpty())
+        if(markerList != null && !markerList.isEmpty())
         {
             LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
@@ -89,6 +132,10 @@ public class MarkerController {
 
             mMap.animateCamera(cu);
         }
+        else
+        {
+            Toast.makeText(context, R.string.no_markers_to_show, Toast.LENGTH_SHORT).show();
+        }
     }
 
     /**
@@ -102,7 +149,7 @@ public class MarkerController {
     {
         ArrayList<Marker> markerList = MarkerModel.getFilteringMarkers(context, cameraType);
 
-        if(!markerList.isEmpty())
+        if(markerList != null && !markerList.isEmpty())
         {
             LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
@@ -124,6 +171,10 @@ public class MarkerController {
             CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds,width,height,100);
 
             mMap.animateCamera(cu);
+        }
+        else
+        {
+            Toast.makeText(context, R.string.no_markers_to_show, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -149,7 +200,5 @@ public class MarkerController {
 
         return markerColor;
     }
-
-
 
 }

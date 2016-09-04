@@ -16,10 +16,6 @@
 
 package com.rodriguez.armin.fotomulta.services;
 
-import com.google.android.gms.maps.model.LatLng;
-
-import java.util.HashMap;
-
 /**
  * Constants used in this sample.
  */
@@ -38,30 +34,14 @@ public final class Constants {
      * Used to set an expiration time for a geofence. After this amount of time Location Services
      * stops tracking the geofence.
      */
-    public static final long GEOFENCE_EXPIRATION_IN_HOURS = 12;
+    public static final long GEOFENCE_EXPIRATION_IN_HOURS = 24;
 
     /**
-     * For this sample, geofences expire after twelve hours.
+     * For this sample, geofences expire after one day hours.
      */
     public static final long GEOFENCE_EXPIRATION_IN_MILLISECONDS =
             GEOFENCE_EXPIRATION_IN_HOURS * 60 * 60 * 1000;
-    public static final float GEOFENCE_RADIUS_IN_METERS = 100; //1609; // 1 mile, 1.6 km
 
-    /**
-     * Map for storing information about airports in the San Francisco bay area.
-     */
-    public static final HashMap<String, LatLng> BAY_AREA_LANDMARKS = new HashMap<String, LatLng>();
-    static {
-        // San Francisco International Airport.
-        BAY_AREA_LANDMARKS.put("SFO", new LatLng(37.621313, -122.378955));
+    public static final float GEOFENCE_RADIUS_IN_METERS = 500; //meters
 
-        // Googleplex.
-        BAY_AREA_LANDMARKS.put("GOOGLE", new LatLng(37.422611,-122.0840577));
-
-        //Comercial Mexicana
-        BAY_AREA_LANDMARKS.put("QUERETARO PEÑUELAS", new LatLng(20.6413,-100.414856));
-
-        //Storecheck
-        BAY_AREA_LANDMARKS.put("Storecheck", new LatLng(20.64648,-100.42937));
-    }
 }

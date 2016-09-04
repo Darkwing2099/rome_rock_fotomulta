@@ -10,17 +10,20 @@
         <item>Hidden</item>
     </string-array>
 
-    <string name="add_marker_question">Do you want add a fotomulta marker?</string>
+    <!-- common words-->
     <string name="yes">Yes</string>
     <string name="no">no</string>
-    <string name="speed_limit">Speed limit:</string>
-    <string name="name">Name:</string>
     <string name="accept">Accept</string>
     <string name="cancel">Cancel</string>
+
+    <!-- marker creation-->
+    <string name="add_marker_question">Do you want add a marker of photo camera infringement?</string>
+    <string name="speed_limit">Speed limit:</string>
+    <string name="name">Name:</string>
     <string name="mph">mph</string>
     <string name="fill_fields">You should fill all fieds</string>
     <string name="camera_type">Camera type:</string>
-    <string name="default_camera_selector_prompt">Select one ...</string>
+    <string name="default_camera_selector_prompt">Choose one ...</string>
 
     <!--Geofences-->
     <string name="geofences_added">Geofences added</string>
@@ -45,6 +48,14 @@
     <string name="geofence_transition_exited">Exited</string>
     <string name="unknown_geofence_transition">Unknown Transition</string>
 
-    <string name="geofence_transition_notification_text">Click notification to return to app</string>
+    <!-- Notification-->
+    <string name="geofence_transition_notification_text">Click notification to open the app</string>
+    <string name="notification_title">You\'re approaching a camera photo infringement</string>
+
+    <!-- velocity alert -->
+    <string name="you_are_to">You are to</string>
+    <string name="meters_of_a_camera">meters of a camera</string>
+    <string name="current_speed">Current speed:</string>
+    <string name="no_markers_to_show">There are not markers to show. Please adds some.</string>
 
 </resources>

@@ -1,136 +1,160 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/map"
+        android:id="@+id/speed_info_container"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".views.MapActivity" />
-
-    <LinearLayout
-        android:id="@+id/ll_data_container"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="15dp"
-        android:gravity="center_vertical|center_horizontal"
-        android:background="@drawable/rounded_corners"
-        android:layout_centerInParent="true"
-        android:visibility="gone">
+        tools:context=".views.MapActivity"
+        android:elevation="5dp"/>
 
-        <LinearLayout
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                style="@style/subtitles"
-                android:gravity="center_vertical"
-                android:text="@string/name"/>
-
-            <EditText
-                android:id="@+id/et_name"
-                style="@style/subtitles"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginLeft="15dp"/>
-
-        </LinearLayout>
+            tools:context=".views.MapActivity" />
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                style="@style/subtitles"
-                android:gravity="center_vertical"
-                android:text="@string/speed_limit"/>
-
-            <EditText
-                android:id="@+id/et_speed_limit"
-                style="@style/subtitles"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:hint="0"
-                android:textSize="15dp"
-                android:gravity="center_horizontal"
-                android:inputType="number"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="@style/subtitles"
-                android:text="@string/mph"/>
-
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/ll_data_container"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="10dp">
+            android:orientation="vertical"
+            android:padding="15dp"
+            android:gravity="center_vertical|center_horizontal"
+            android:background="@drawable/rounded_corners"
+            android:layout_centerInParent="true"
+            android:visibility="gone">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                style="@style/subtitles"
-                android:gravity="center_vertical"
-                android:text="@string/camera_type"/>
+                android:orientation="horizontal">
 
-            <Spinner
-                android:id="@+id/sp_camera_type_selector"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    style="@style/subtitles"
+                    android:gravity="center_vertical"
+                    android:text="@string/name"/>
+
+                <EditText
+                    android:id="@+id/et_name"
+                    style="@style/subtitles"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:singleLine="true"
+                    android:imeOptions="actionNext"
+                    android:textCursorDrawable="@drawable/cursor"
+                    android:backgroundTint="@color/blue_light"
+                    android:layout_marginLeft="15dp"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    style="@style/subtitles"
+                    android:gravity="center_vertical"
+                    android:text="@string/speed_limit"/>
+
+                <EditText
+                    android:id="@+id/et_speed_limit"
+                    style="@style/subtitles"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:hint="0"
+                    android:textSize="15dp"
+                    android:gravity="center_horizontal"
+                    android:textCursorDrawable="@drawable/cursor"
+                    android:backgroundTint="@color/blue_light"
+                    android:imeOptions="actionDone"
+                    android:inputType="number"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/subtitles"
+                    android:text="@string/mph"/>
+
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_margin="5dp"/>
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    style="@style/subtitles"
+                    android:gravity="center_vertical"
+                    android:text="@string/camera_type"/>
+
+                <Spinner
+                    android:id="@+id/sp_camera_type_selector"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:layout_margin="5dp"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_accept"
+                    style="@style/button"
+                    android:layout_width="match_parent"
+                    android:layout_height="35dp"
+                    android:layout_weight="1"
+                    android:text="@string/accept"
+                    android:layout_marginRight="5dp"/>
+
+                <Button
+                    android:id="@+id/btn_cancel"
+                    style="@style/button"
+                    android:layout_width="match_parent"
+                    android:layout_height="35dp"
+                    android:layout_weight="1"
+                    android:text="@string/cancel"
+                    android:layout_marginLeft="5dp"/>
+
+            </LinearLayout>
 
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btn_accept"
-                style="@style/button"
-                android:layout_width="match_parent"
-                android:layout_height="35dp"
-                android:layout_weight="1"
-                android:text="@string/accept"
-                android:layout_marginRight="5dp"/>
-
-            <Button
-                android:id="@+id/btn_cancel"
-                style="@style/button"
-                android:layout_width="match_parent"
-                android:layout_height="35dp"
-                android:layout_weight="1"
-                android:text="@string/cancel"
-                android:layout_marginLeft="5dp"/>
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <com.software.shell.fab.ActionButton
-        android:id="@+id/action_button"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true" />
+        <com.software.shell.fab.ActionButton
+            android:id="@+id/action_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true" />
 
 
-</RelativeLayout>
+    </RelativeLayout>
+
+
+</LinearLayout>
 

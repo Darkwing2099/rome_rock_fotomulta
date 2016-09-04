@@ -11,28 +11,46 @@
         <item>Oculta</item>
     </string-array>
 
-    <string name="add_marker_question">¿Quieres agregar un indacador de fotomulta?</string>
+    <!-- common words-->
     <string name="yes">Sí</string>
     <string name="no">no</string>
-    <string name="speed_limit">Límite de velocidad: </string>
-    <string name="name">Nombre: </string>
     <string name="accept">Aceptar</string>
     <string name="cancel">Cancelar</string>
+
+    <!-- marker creation-->
+    <string name="add_marker_question">¿Quieres agregar un marcador de una cámara de foto infracción?</string>
+    <string name="speed_limit">Límite de velocidad: </string>
+    <string name="name">Nombre: </string>
     <string name="mph">km/h</string>
     <string name="fill_fields">Debes llenar todos los campos</string>
     <string name="camera_type">Tipo de cámara:</string>
     <string name="default_camera_selector_prompt">Selecciona una ...</string>
-    <string name="geofence_not_available">El servicio Geofence no esta disponible por el momento</string>
-    <string name="geofence_too_many_geofences">Tú aplicación tiene muchas geofences registradas</string>
-    <string name="geofence_transition_entered">Entrando</string>
-    <string name="geofence_transition_exited">Saliendo</string>
+
+    <!--Geofences-->
     <string name="geofences_added">Geofence agregada</string>
     <string name="geofences_removed">Geofence removida</string>
-    <string name="geofence_transition_notification_text">Selecciona para abrir la aplicación</string>
-    <string name="geofence_too_many_pending_intents">Tienes demasiadas llamadas pendientes de geofences</string>
-    <string name="unknown_geofence_transition">Transicion desconocida</string>
-    <string name="unknown_geofence_error">Error desconocido: servicio Geofence no disponible por el momento</string>
+
+    <!-- Error strings -->
     <string name="not_connected">Google Api aun no esta conectada, intente de nuevo</string>
+    <string name="geofence_not_available">El servicio Geofence no esta disponible por el momento</string>
+    <string name="geofence_too_many_geofences">Tú aplicación tiene muchas geofences registradas</string>
+    <string name="geofence_too_many_pending_intents">Tienes demasiadas llamadas pendientes de geofences</string>
+    <string name="unknown_geofence_error">Error desconocido: servicio Geofence no disponible por el momento</string>
     <string name="geofence_transition_invalid_type">Error de trancision de Geofence</string>
+
+    <!-- Transition type strings -->
+    <string name="geofence_transition_entered">Entrando</string>
+    <string name="geofence_transition_exited">Saliendo</string>
+    <string name="unknown_geofence_transition">Transicion desconocida</string>
+
+    <!-- Notification-->
+    <string name="geofence_transition_notification_text">Selecciona para abrir la aplicación</string>
+    <string name="notification_title">Te estás aproximando a una camara de foto infracción</string>
+
+    <!-- velocity alert -->
+    <string name="you_are_to">Estás a</string>
+    <string name="meters_of_a_camera">metros de una cámara</string>
+    <string name="current_speed">Velocidad actual:</string>
+    <string name="no_markers_to_show">No hay marcadores para mostrar, por favor agrega algunos.</string>
 
 </resources>

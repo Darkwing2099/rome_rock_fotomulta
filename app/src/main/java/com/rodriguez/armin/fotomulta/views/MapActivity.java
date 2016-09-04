@@ -13,8 +13,10 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.view.Display;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -22,6 +24,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -33,6 +36,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -45,12 +49,17 @@ import com.rodriguez.armin.fotomulta.R;
 import com.rodriguez.armin.fotomulta.beans.Marker;
 import com.rodriguez.armin.fotomulta.controllers.GeofenceController;
 import com.rodriguez.armin.fotomulta.controllers.MarkerController;
+import com.rodriguez.armin.fotomulta.controllers.Utils;
 import com.rodriguez.armin.fotomulta.enums.CameraType;
+import com.rodriguez.armin.fotomulta.interfaces.MapCallback;
+import com.rodriguez.armin.fotomulta.interfaces.SpeedInfoCallback;
+import com.rodriguez.armin.fotomulta.models.MarkerModel;
 import com.software.shell.fab.ActionButton;
 
-public class MapActivity extends FragmentActivity implements OnMapReadyCallback, ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
+public class MapActivity extends FragmentActivity implements OnMapReadyCallback, ConnectionCallbacks, OnConnectionFailedListener, LocationListener, SpeedInfoCallback {
 
     private Context context;
+    private boolean firstTime = true;
 
     //to manage map
     private GoogleMap mMap;
@@ -71,7 +80,21 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private GoogleApiClient mGoogleApiClient;
     private GeofenceController geofenceController;
 
+    //location manager
+    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+    public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
+            UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+
+    protected LocationRequest mLocationRequest;
+
     private float currentSpeed = 0;
+
+    // Speed info view
+    long incomingMarkerId = -1;
+    FrameLayout infoContainer;
+    Fragment speedInfo;
+    MapCallback mapCallback;
+    LatLng incomingMarkerLatLng;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,18 +105,16 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        Bundle extras = getIntent().getExtras();
+        if(extras != null)
+        {
+            incomingMarkerId = extras.getLong("markerId", -1);
+        }
+
         context = getBaseContext();
         markerController = new MarkerController(context);
 
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
-
-            geofenceController = new GeofenceController(context, mGoogleApiClient);
-        }
+        buildGoogleApiClient();
 
         //get screen size
         Display display = getWindowManager().getDefaultDisplay();
@@ -127,6 +148,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         SubActionButton.Builder itemBuilder = new SubActionButton.Builder(this);
         initFloatButton(itemBuilder);
 
+        //speed info
+        infoContainer = (FrameLayout) findViewById(R.id.speed_info_container);
+
+        //creation marker layout
         acceptBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -137,9 +162,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 if (name.isEmpty() || speedLimit.isEmpty() || cameraType == null)
                     Toast.makeText(context, R.string.fill_fields, Toast.LENGTH_SHORT).show();
                 else {
-                    Marker marker = markerController.createMarker(mMap,name,speedLimit,selectedLocation,cameraType);
-                    geofenceController.addGeofence(marker);
-
+                    markerController.createMarker(mMap, name, speedLimit, selectedLocation, cameraType);
+                    markerController.refreshGeofences(mGoogleApiClient);
+                    
                     markerInfoForm.setVisibility(View.GONE);
                     resetForm();
                 }
@@ -158,8 +183,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
-                switch (position)
-                {
+                switch (position) {
                     case 1:
                         cameraType = CameraType.TRAFFIC_LIGHT;
                         break;
@@ -171,7 +195,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                         break;
                 }
 
-                ((TextView) parent.getChildAt(0)).setTextColor(Color.WHITE);
+                if(parent != null && parent.getChildAt(0) != null)
+                    ((TextView) parent.getChildAt(0)).setTextColor(Color.WHITE);
             }
 
             @Override
@@ -199,6 +224,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 showDialog();
             }
         });
+
+        if(incomingMarkerId != -1)
+        {
+            incomingMarkerLatLng = MarkerModel.getMarkerLatLngById(context, incomingMarkerId);
+            showFragment(incomingMarkerId);
+            markerController.showMarkerById(mMap, incomingMarkerId);
+        }
     }
 
     private void showDialog() {
@@ -241,20 +273,28 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             return;
         }
 
-        currentLocation = LocationServices.FusedLocationApi.getLastLocation(
-                mGoogleApiClient);
+        if (currentLocation == null) {
+            currentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        }
 
         if (currentLocation != null) {
 
-            LatLng latLng= new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
+            LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
         }
 
+        startLocationUpdates();
+
+        if(firstTime)
+        {
+            markerController.refreshGeofences(mGoogleApiClient);
+            firstTime = false;
+        }
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-
+        mGoogleApiClient.connect();
     }
 
     @Override
@@ -272,6 +312,18 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     protected void onResume() {
         super.onResume();
 
+        if (mGoogleApiClient.isConnected()) {
+            startLocationUpdates();
+        }
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mGoogleApiClient.isConnected()) {
+            stopLocationUpdates();
+        }
     }
 
     @Override
@@ -280,8 +332,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         super.onStop();
     }
 
-    private void hideKeyboard()
-    {
+    private void hideKeyboard() {
         markerName.requestFocus();
         ((InputMethodManager) markerName.getContext().getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(markerName.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
     }
@@ -290,8 +341,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
      * Set extra buttons to float Action Button
      * @param itemBuilder
      */
-    private void initFloatButton(SubActionButton.Builder itemBuilder)
-    {
+    private void initFloatButton(SubActionButton.Builder itemBuilder) {
         //show all markers button
         ImageView showAllIcon = new ImageView(this); // Create an icon
         showAllIcon.setImageResource(R.drawable.two_markers);
@@ -352,8 +402,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 actionMenu.close(true);
                 mMap.clear();
 
-                LatLng latLng= new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
+                LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
             }
         });
 
@@ -385,12 +435,90 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         });
     }
 
+    /**
+     * Builds a GoogleApiClient. Uses the {@code #addApi} method to request the
+     * LocationServices API.
+     */
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+
+        geofenceController = new GeofenceController(context, mGoogleApiClient);
+
+        createLocationRequest();
+    }
+
+    protected void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+
+        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+
+        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
+
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    /**
+     * Requests location updates from the FusedLocationApi.
+     */
+    protected void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        LocationServices.FusedLocationApi.requestLocationUpdates(
+                mGoogleApiClient, mLocationRequest, this);
+    }
+
+    /**
+     * Removes location updates from the FusedLocationApi.
+     */
+    protected void stopLocationUpdates() {
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+    }
+
     @Override
     public void onLocationChanged(Location location) {
+
+        currentLocation = location;
         currentSpeed = location.getSpeed();
 
-        Toast.makeText(context,"velocidad actual: " + currentSpeed, Toast.LENGTH_SHORT).show();
-        Log.d("armin", "location change");
+        if(speedInfo != null)
+        {
+            mapCallback.onSpeedChange(Utils.convertLocationSpeedToKmHr(currentSpeed), Utils.getDistanceBetween(incomingMarkerLatLng, new LatLng(location.getLatitude(), location.getLongitude())));
+        }
 
+    }
+
+    public void showFragment(long incomingMarkerId)
+    {
+        if(speedInfo == null) {
+            speedInfo = SpeedAlertInfoFragment.newInstance(this, incomingMarkerId);
+            setMapCallback((MapCallback) speedInfo);
+
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+            fragmentTransaction.replace(R.id.speed_info_container, speedInfo);
+            fragmentTransaction.commit();
+        }
+
+        if(!infoContainer.isShown())
+            infoContainer.setVisibility(View.VISIBLE);
+
+    }
+
+    @Override
+    public void closeWindow() {
+
+        if(infoContainer.isShown())
+            infoContainer.setVisibility(View.GONE);
+    }
+
+    public void setMapCallback(MapCallback mapCallback) {
+        this.mapCallback = mapCallback;
     }
 }
